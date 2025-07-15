@@ -1,103 +1,106 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useEffect, useState } from 'react';
+import AddTimerForm from '@/components/AddTimerForm';
+import CategorySection from '@/components/CategorySection';
+import { useTimerContext } from '@/context/TimerContext';
+import Link from 'next/link';
+import ThemeToggle from '@/components/ThemeToggle';
+import { Timer } from '@/context/types';
+
+export default function Page() {
+  const { state, dispatch } = useTimerContext();
+  const [filter, setFilter] = useState<string>('All');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      state.timers.forEach((timer) => {
+        if (timer.status === 'running') {
+          dispatch({ type: 'TICK', payload: timer.id });
+
+          if (
+            timer.halfwayAlert &&
+            timer.remaining === Math.floor(timer.duration / 2)
+          ) {
+            alert(`⏳ Halfway through "${timer.name}"!`);
+          }
+
+          if (timer.remaining <= 1) {
+            dispatch({ type: 'COMPLETE_TIMER', payload: timer.id });
+            alert(`⏰ Timer "${timer.name}" completed!`);
+          }
+        }
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [state.timers, dispatch]);
+
+  const categories = ['All', ...new Set(state.timers.map((t) => t.category))];
+  const filteredTimers = state.timers.filter((t) =>
+    filter === 'All' ? true : t.category === filter
+  );
+
+  const groupedTimers: Record<string, Timer[]> = filteredTimers.reduce(
+    (groups, timer) => {
+      if (!groups[timer.category]) groups[timer.category] = [];
+      groups[timer.category].push(timer);
+      return groups;
+    },
+    {} as Record<string, Timer[]>
+  );
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="flex justify-center px-4 bg-gradient-to-b from-gray-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 min-h-screen text-gray-800 dark:text-gray-100 py-10">
+      <div className="w-full max-w-4xl">
+        {/* Centered Heading */}
+        <h1 className="text-5xl font-extrabold text-center text-blue-700 dark:text-blue-400 mb-8 drop-shadow-md">
+          ⏱️ Multi-Timer App
+        </h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+        {/* Navbar */}
+        <nav className="flex justify-center space-x-6 mb-8">
+          <Link href="/" className="text-lg font-medium hover:text-blue-600 dark:hover:text-blue-400">
+            🏠 Home
+          </Link>
+          <Link href="/history" className="text-lg font-medium hover:text-blue-600 dark:hover:text-blue-400">
+            📜 History
+          </Link>
+          <Link href="/analytics" className="text-lg font-medium hover:text-blue-600 dark:hover:text-blue-400">
+            📊 Analytics
+          </Link>
+        </nav>
+
+        {/* Theme Toggle */}
+        <div className="flex justify-center mb-6">
+          <ThemeToggle />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Category Filter */}
+        <div className="max-w-md mx-auto mb-10">
+          <label className="block mb-2 text-sm font-semibold">Filter by Category:</label>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 p-3 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Timer Form */}
+        <div className="mb-8">
+          <AddTimerForm />
+        </div>
+
+        {/* Grouped Timers */}
+        <div className="space-y-8">
+          {Object.entries(groupedTimers).map(([category, timers]) => (
+            <CategorySection key={category} category={category} timers={timers as Timer[]} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
